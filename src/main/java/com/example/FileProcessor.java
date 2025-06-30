@@ -9,6 +9,9 @@ import java.io.Reader;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.net.URL;
+import com.example.WebNovelCrawler;
+import org.jsoup.nodes.Document;
 
 /**
  * 文件处理器类，负责处理文本文件的读取和内容处理
@@ -68,6 +71,66 @@ public class FileProcessor {
      * @param chapterFile 章节文件
      */
     private void processChapterFile(String tableName, File chapterFile) {
+        try {
+            String content;
+            if (chapterFile.getName().startsWith("http://") || chapterFile.getName().startsWith("https://")) {
+                WebNovelCrawler crawler = new WebNovelCrawler();
+                try {
+                    String html = crawler.fetchHtmlContent(chapterFile.getName());
+                    Document doc = crawler.parseHtml(html);
+                    content = crawler.extractNovelContent(doc, "div.chapter-content");
+                } finally {
+                    crawler.close();
+                }
+            } else {
+                content = readFileContent(chapterFile);
+            }
+            dbManager.insertChapterContent(tableName, chapterFile.getName(), content);
+        } catch (IOException | SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 读取内容，支持文件和URL
+     * @param source 文件路径或URL
+     * @return 内容字符串
+     * @throws IOException 如果读取失败
+     * @throws SQLException 如果数据库操作失败
+     */
+    public String readContent(String source) throws IOException, SQLException {
+        if (source.startsWith("http://") || source.startsWith("https://")) {
+            WebNovelCrawler crawler = new WebNovelCrawler();
+            try {
+                String html = crawler.fetchHtmlContent(source);
+                Document doc = crawler.parseHtml(html);
+                String content = crawler.extractNovelContent(doc, "div.chapter-content");
+                
+                // 获取书名和章节名
+                String bookName = doc.select("h1.book-title").text();
+                if (bookName.isEmpty()) {
+                    bookName = "未命名书籍";
+                }
+                // 清理表名中的非法字符
+                bookName = bookName.replaceAll("[^\\w\\u4e00-\\u9fa5]", "");
+                String chapterName = doc.select("h1.chapter-title").text();
+                if (chapterName.isEmpty()) {
+                    chapterName = "未命名章节";
+                }
+                
+                // 保存到数据库
+                dbManager.saveChapter(bookName, chapterName, content);
+                
+                return content;
+            } finally {
+                crawler.close();
+            }
+        } else {
+            return readFileContent(new File(source));
+        }
+    }
+
+    private String readFileContent(File chapterFile) throws SQLException {
         try (Reader fileReader = new InputStreamReader(new FileInputStream(chapterFile), "GB2312");
              BufferedReader reader = new BufferedReader(fileReader)) {
             String line;
@@ -86,11 +149,10 @@ public class FileProcessor {
                 contentBuilder.append(filteredLine).append("\n");
             }
             
-            // 将处理后的内容存入数据库
-            String content = contentBuilder.toString().trim();
-            dbManager.insertChapterContent(tableName, chapterFile.getName(), content);
-        } catch (IOException | SQLException e) {
+            return contentBuilder.toString().trim();
+        } catch (IOException e) {
             e.printStackTrace();
+            return "";
         }
     }
 }

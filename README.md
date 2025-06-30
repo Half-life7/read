@@ -1,28 +1,64 @@
 # 文本阅读器项目文档
 
-## 主要类与接口介绍
+## 一、功能介绍
 
-### App.java
-- **功能**：程序入口类，负责协调各模块工作
-- **主要方法**：
-  - `main()`: 初始化DatabaseManager和FileProcessor，启动文件处理流程
+本应用是一个多功能文本处理工具，主要功能包括：
 
-### DatabaseManager.java
+1. **本地文本处理**
+   - 递归扫描文件夹中的文本文件
+   - 自动清理文本中的特殊字符和格式
+   - 将文本内容存储到SQLite数据库
+   - 支持中文文本的规范化处理
 
-- **功能**：数据库管理类，处理所有数据库相关操作
-- **主要方法**：
-  - `createDatabase()`: 创建数据库连接
-  - `createTable()`: 创建存储章节内容的表
-  - `insertChapterContent()`: 插入章节内容到数据库
-  - `sanitizeTableName()`: 清理表名中的特殊字符
+2. **网络小说爬取**
+   - 从网页获取小说内容
+   - 自动检测网页编码
+   - 智能提取正文内容
+   - 请求频率控制防止被封禁
 
-### FileProcessor.java
+3. **数据管理**
+   - 自动创建数据库和表
+   - 表名安全处理
+   - 章节内容批量插入
 
-- **功能**：文件处理器类，负责文件读取和内容处理
-- **主要方法**：
-  - `processFolder()`: 递归处理文件夹及其子文件夹中的文本文件
-  - `processChapterFile()`: 处理单个章节文件，包括内容过滤和数据库插入
-  - `cleanContent()`: 使用正则表达式清理文本内容
+## 二、重要的类及接口介绍
+
+### 1. App (主程序类)
+- **职责**：程序入口，协调各模块工作
+- **关键方法**：
+  - `main()`: 初始化各组件并启动处理流程
+  - 负责命令行参数解析和任务分发
+
+### 2. DatabaseManager (数据库管理)
+- **职责**：所有数据库相关操作
+- **核心功能**：
+  - `createDatabase()`: 创建/连接数据库
+  - `createTable()`: 根据书名创建章节表
+  - `insertChapterContent()`: 批量插入章节内容
+  - 表名安全处理机制
+
+### 3. FileProcessor (文件处理器)
+- **职责**：本地文件处理
+- **核心功能**：
+  - `processFolder()`: 递归处理文件夹
+  - `processChapterFile()`: 单文件处理流水线
+  - 内容清理和规范化
+
+### 4. WebNovelCrawler (网络爬取)
+- **职责**：网页小说内容获取
+- **核心技术**：
+  - HTTP客户端与HTML解析
+  - 内容选择器智能匹配
+  - 请求间隔控制
+  - 编码自动检测
+
+### 5. NovelReaderGUI (图形界面)
+- **职责**：提供用户友好的图形界面
+- **核心功能**：
+  - 书籍和章节列表展示
+  - 内容阅读区域
+  - 网络小说爬取界面
+  - 数据库内容可视化
 
 ## 项目结构
 
@@ -32,12 +68,29 @@ text-reader/
 │   ├── main/java/com/example/
 │   │   ├── App.java
 │   │   ├── DatabaseManager.java
-│   │   └── FileProcessor.java
+│   │   ├── FileProcessor.java
+│   │   ├── WebNovelCrawler.java
+│   │   └── NovelReaderGUI.java
 ├── test/
 │   └── 示例文本文件/
 ```
 
-## 使用说明
-1. 将文本文件放入test目录下
-2. 运行App.java启动程序
-3. 程序会自动处理文本文件并存入数据库
+## 快速开始
+
+1. 克隆项目
+```bash
+git clone https://github.com/your-repo/text-reader.git
+```
+
+2. 构建项目
+```bash
+mvn package
+```
+
+3. 运行程序
+```bash
+java -jar target/text-reader-1.0-SNAPSHOT.jar
+```
+
+
+

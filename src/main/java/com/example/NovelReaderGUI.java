@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.border.TitledBorder;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,6 +21,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.io.FileInputStream;
 
 import com.example.App;
 
@@ -39,10 +42,33 @@ public class NovelReaderGUI extends JFrame {
         }
     }
 
-    public NovelReaderGUI() {
+    private JTextField urlField;
+private JButton crawlButton;
+
+public NovelReaderGUI() {
         // 每次启动时读取文件夹中的文件到数据库
         // readFilesToDatabase();
         initUI();
+    }
+    
+    private List<String> loadPresetWebsites() {
+        List<String> websites = new ArrayList<>();
+        try {
+            Properties prop = new Properties();
+            prop.load(new FileInputStream("config.ini"));
+            
+            for (int i = 1; prop.containsKey("website" + i); i++) {
+                websites.add(prop.getProperty("website" + i));
+            }
+        } catch (IOException e) {
+            System.err.println("读取config.ini失败: " + e.getMessage());
+            // 默认网站列表
+            websites.add("https://www.qidian.com");
+            websites.add("https://www.zongheng.com");
+            websites.add("https://www.xxsy.net");
+            websites.add("https://www.17k.com");
+        }
+        return websites;
     }
 
     private void initUI() {
@@ -74,7 +100,45 @@ public class NovelReaderGUI extends JFrame {
         leftSplit.setDividerLocation(200);
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftSplit, contentScrollPane);
         mainSplit.setDividerLocation(200);
-        add(mainSplit);
+        // 添加URL输入面板
+        JPanel urlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        urlPanel.setBorder(new TitledBorder("网络小说爬取"));
+        
+        // 添加常用网站下拉列表
+        List<String> presetWebsites = loadPresetWebsites();
+        JComboBox<String> websiteCombo = new JComboBox<>(presetWebsites.toArray(new String[0]));
+        websiteCombo.addActionListener(e -> {
+            urlField.setText((String)websiteCombo.getSelectedItem());
+        });
+        
+        urlField = new JTextField(30);
+        crawlButton = new JButton("爬取");
+        urlPanel.add(new JLabel("常用网站:"));
+        urlPanel.add(websiteCombo);
+        crawlButton.addActionListener(e -> {
+            String url = urlField.getText();
+            if (!url.isEmpty()) {
+                try {
+                    DatabaseManager dbManager = new DatabaseManager();
+                    String content = new FileProcessor(dbManager).readContent(url);
+                    JOptionPane.showMessageDialog(this, "爬取成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    loadBooks(); // 刷新书籍列表
+                    if (bookModel.size() > 0) {
+                        bookList.setSelectedIndex(0); // 自动选中第一本书
+                    }
+                } catch (IOException | SQLException ex) {
+                    JOptionPane.showMessageDialog(this, "爬取失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        urlPanel.add(new JLabel("URL:"));
+        urlPanel.add(urlField);
+        urlPanel.add(crawlButton);
+        
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(urlPanel, BorderLayout.NORTH);
+        mainPanel.add(mainSplit, BorderLayout.CENTER);
+        add(mainPanel);
 
         // 加载书籍列表
         loadBooks();

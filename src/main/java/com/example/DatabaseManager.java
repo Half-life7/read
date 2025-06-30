@@ -42,6 +42,11 @@ public class DatabaseManager {
         }
     }
 
+    public void saveChapter(String bookName, String chapterName, String content) throws SQLException {
+        createTable(bookName);
+        insertChapterContent(bookName, chapterName, content);
+    }
+
     public void closeConnection() throws SQLException {
         if (conn != null && !conn.isClosed()) {
             conn.close();
