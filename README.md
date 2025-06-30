@@ -59,6 +59,7 @@
   - 内容阅读区域
   - 网络小说爬取界面
   - 数据库内容可视化
+  - 阅读设置面板：支持背景色、字体颜色、大小和行间距调节
 
 ## 项目结构
 
@@ -90,6 +91,12 @@ mvn package
 3. 运行程序
 ```bash
 java -jar target/text-reader-1.0-SNAPSHOT.jar
+```
+
+或者使用批处理文件（Windows系统）：
+```bash
+cd run
+start gui.bat
 ```
 
 

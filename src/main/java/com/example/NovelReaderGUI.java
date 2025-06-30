@@ -135,9 +135,55 @@ public NovelReaderGUI() {
         urlPanel.add(urlField);
         urlPanel.add(crawlButton);
         
+        JPanel settingsPanel = new JPanel(new GridLayout(0, 2));
+        settingsPanel.setBorder(new TitledBorder("阅读设置"));
+        
+        // 背景色设置
+        JButton bgColorBtn = new JButton("背景色");
+        bgColorBtn.addActionListener(e -> {
+            Color newColor = JColorChooser.showDialog(this, "选择背景色", contentArea.getBackground());
+            if (newColor != null) {
+                contentArea.setBackground(newColor);
+            }
+        });
+        
+        // 字体颜色设置
+        JButton textColorBtn = new JButton("字体颜色");
+        textColorBtn.addActionListener(e -> {
+            Color newColor = JColorChooser.showDialog(this, "选择字体颜色", contentArea.getForeground());
+            if (newColor != null) {
+                contentArea.setForeground(newColor);
+            }
+        });
+        
+        // 字体大小设置
+        JLabel fontSizeLabel = new JLabel("字体大小:");
+        JSpinner fontSizeSpinner = new JSpinner(new SpinnerNumberModel(12, 8, 36, 1));
+        fontSizeSpinner.addChangeListener(e -> {
+            Font currentFont = contentArea.getFont();
+            contentArea.setFont(new Font(currentFont.getName(), currentFont.getStyle(), (Integer)fontSizeSpinner.getValue()));
+        });
+        
+        // 行间距设置
+        JLabel lineSpacingLabel = new JLabel("行间距:");
+        JSpinner lineSpacingSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.5, 3.0, 0.1));
+        lineSpacingSpinner.addChangeListener(e -> {
+            float spacing = ((Double)lineSpacingSpinner.getValue()).floatValue();
+            contentArea.setFont(contentArea.getFont().deriveFont(contentArea.getFont().getSize2D()));
+            contentArea.setMargin(new Insets(0, 0, (int)(contentArea.getFont().getSize() * (spacing - 1)), 0));
+        });
+        
+        settingsPanel.add(bgColorBtn);
+        settingsPanel.add(textColorBtn);
+        settingsPanel.add(fontSizeLabel);
+        settingsPanel.add(fontSizeSpinner);
+        settingsPanel.add(lineSpacingLabel);
+        settingsPanel.add(lineSpacingSpinner);
+        
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(urlPanel, BorderLayout.NORTH);
         mainPanel.add(mainSplit, BorderLayout.CENTER);
+        mainPanel.add(settingsPanel, BorderLayout.SOUTH);
         add(mainPanel);
 
         // 加载书籍列表
